@@ -10,15 +10,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.e_paper.image_processing.ImageProcessing
-import com.example.e_paper.screens.HomeScreen
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.e_paper.classes.ImageProcessing
+import com.example.e_paper.classes.SketchImage
+import com.example.e_paper.classes.Tools
+import com.example.e_paper.navigation.NavGraphSetup
 import com.example.e_paper.ui.theme.EpaperTheme
 
 class MainActivity : ComponentActivity() {
+
+    lateinit var navController: NavHostController
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val ImageProcessing = ImageProcessing(context = this)
+        val sketchImage = SketchImage(context = this)
+        val sketchTools = Tools()
 
         setContent {
             EpaperTheme {
@@ -27,7 +35,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    HomeScreen(imageProcessing = ImageProcessing)
+                    navController = rememberNavController()
+                    NavGraphSetup(
+                        navController = navController,
+                        imageProcessing = ImageProcessing,
+                        sketchImage = sketchImage,
+                        tools = sketchTools
+                    )
                 }
             }
         }

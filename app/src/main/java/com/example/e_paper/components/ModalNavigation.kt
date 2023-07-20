@@ -3,17 +3,10 @@ package com.example.e_paper.components
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -28,16 +21,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.navigation.NavController
 import com.example.e_paper.R
-import com.example.e_paper.image_processing.ImageProcessing
+import com.example.e_paper.classes.ImageProcessing
+import com.example.e_paper.navigation.Screens
 import kotlinx.coroutines.launch
 
 @Composable
-fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing) {
+fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController: NavController) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val scopeSelectImage = rememberCoroutineScope()
@@ -51,8 +46,7 @@ fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing) {
         try {
             if(!it!!.toString().isNullOrBlank()){
                 imageProcessing.selectImages = it!!.toString()
-
-//                Log.d("log_item", "Image : $imageProcessing.selectImages ${it.lastPathSegment}")
+                imageProcessing.UriToBitmap(it)
             }
         }
         catch (e: Exception){
@@ -76,7 +70,7 @@ fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing) {
                         label = { Text(item) },
                         selected = item == selectedItem.value,
                         onClick = {
-                            imageProcessing.SizeDisplay(choice = if(index < 2) 1 else 0)
+                            imageProcessing.SizeDisplay(choice = index)
                             selectedItem.value = item
 
                             imageProcessing.imageShow = false
@@ -118,12 +112,26 @@ fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing) {
                 ) {
                     Text(text = "Select Image")
                 }
+                Spacer(Modifier.height(32.dp))
+                Button(
+                    modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 16.dp),
+                    onClick = {
+                        navController.navigate(route = Screens.Sketch.route) {
+                            popUpTo(Screens.Sketch.route) {
+                                inclusive = true
+                            }
+                        }
+                    },
+                ) {
+                    Text(text = "Create Sketch")
+                }
             }
         },
         content = {
-            MyScaffild(imageProcessing = imageProcessing){
+            MyScaffold(imageProcessing = imageProcessing){
                 scope.launch { if(it) drawerState.open() else drawerState.close() }
             }
+//            SimpleBottomSheetScaffoldSample()
         }
     )
 }

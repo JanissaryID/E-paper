@@ -2,12 +2,11 @@ package com.example.e_paper.screens
 
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 import com.example.e_paper.components.ModalNavigationDrawerSample
-import com.example.e_paper.components.MyScaffild
-import com.example.e_paper.image_processing.ImageProcessing
-import com.example.e_paper.page.HomePage
+import com.example.e_paper.classes.ImageProcessing
 
 @Composable
-fun HomeScreen(imageProcessing: ImageProcessing) {
-    ModalNavigationDrawerSample(imageProcessing = imageProcessing)
+fun HomeScreen(imageProcessing: ImageProcessing, navController: NavController) {
+    ModalNavigationDrawerSample(imageProcessing = imageProcessing, navController = navController)
 }

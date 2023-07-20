@@ -1,44 +1,30 @@
-package com.example.e_paper.image_processing
+package com.example.e_paper.classes
 
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Matrix
 import android.net.Uri
-import android.util.Base64
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.net.toUri
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import okhttp3.internal.toHexString
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
-import java.io.BufferedOutputStream
 import java.io.BufferedReader
-import java.io.ByteArrayOutputStream
-import java.io.DataOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.FileWriter
-import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
-import java.io.OutputStreamWriter
 import java.net.Socket
-import java.nio.ByteBuffer
-import kotlin.experimental.and
 import kotlin.experimental.or
-import kotlin.math.roundToInt
 
 class ImageProcessing(context: Context) {
 
@@ -50,10 +36,18 @@ class ImageProcessing(context: Context) {
     var imgHeight = 0
     var imgWidth = 0
 
+    var sendding : Boolean by mutableStateOf(false)
+    var progressDone : Float by mutableStateOf(1f)
+    var progress : Float by mutableStateOf(0f)
+
+    var delaySendTCP = 10L
+
     var myIpAddress = ""
     var myPort = 0
 
     var myBitmap: Bitmap? = null
+//    var myBitmapCanvas: Bitmap? = null
+    var myBitmapCanvas: Bitmap? = null
 
     var myBitmapTop: Bitmap? = null
     var myBitmapBottom: Bitmap? = null
@@ -76,7 +70,7 @@ class ImageProcessing(context: Context) {
         this@ImageProcessing.context = context
     }
 
-    fun uriToBitmap(uri: Uri): Bitmap? {
+    fun UriToBitmap(uri: Uri): Bitmap? {
         val contentResolver: ContentResolver = context.contentResolver
         var inputStream: InputStream? = null
         var bitmap: Bitmap? = null
@@ -89,22 +83,27 @@ class ImageProcessing(context: Context) {
         } finally {
             inputStream?.close()
         }
-
-        return bitmap
+        myBitmapCanvas = bitmap
+        Log.i("Bitmap", "Bitmap Canvas = ${myBitmapCanvas}")
+        return myBitmapCanvas
     }
 
-    fun SizeDisplay(choice: Int){
+    fun SizeDisplay(choice: Int = 0){
 
         display = choice
 
         when(choice){
             0 -> {
-                imgHeight = 680
-                imgWidth = 960
+                imgHeight = 300
+                imgWidth = 400
             }
             1 -> {
                 imgHeight = 300
                 imgWidth = 400
+            }
+            2 -> {
+                imgHeight = 680
+                imgWidth = 960
             }
             else -> println("You can chose another choice")
         }
@@ -118,77 +117,64 @@ class ImageProcessing(context: Context) {
                     myBitmap!!.recycle()
                     myBitmap = null
                 }
-                myBitmap = uriToBitmap(selectImages.toUri())?.let { colorScaleWithoutDithering(image = it) }?.let {
-                    resizeImage(
-                        image = it,
-                        newWidth = imgWidth,
-                        newHeight = imgHeight
-                    )
+                myBitmap = myBitmapCanvas?.let {
+                    convertToBinary(image = it)?.let {
+                        resizeImage(
+                            image = it,
+                            newWidth = imgWidth,
+                            newHeight = imgHeight
+                        )
+                    }
                 }
-                if(display == 0){
-                    processHalfImage()
-                }
-                else if(display == 1){
-                    processFullImage()
-                }
+                processFullImage()
             }
             1 -> {
                 if(myBitmap != null){
                     myBitmap!!.recycle()
                     myBitmap = null
                 }
-                myBitmap = uriToBitmap(selectImages.toUri())?.let { convertToBinary(image = it) }?.let {
-                    resizeImage(
-                        image = it,
-                        newWidth = imgWidth,
-                        newHeight = imgHeight
-                    )
+                myBitmap = myBitmapCanvas?.let {
+                    colorScaleWithoutDithering(image = it)?.let {
+                        resizeImage(
+                            image = it,
+                            newWidth = imgWidth,
+                            newHeight = imgHeight
+                        )
+                    }
                 }
-                if(display == 0){
-                    processHalfImage()
-                }
-                else if(display == 1){
-                    processFullImage()
-                }
+                processFullImage()
             }
             2 -> {
                 if(myBitmap != null){
                     myBitmap!!.recycle()
                     myBitmap = null
                 }
-                myBitmap = uriToBitmap(selectImages.toUri())?.let { errorDiffusionDithering(image = convertToGrayscale(image = it))
-                }?.let {
-                    resizeImage(
-                        image = it,
-                        newWidth = imgWidth,
-                        newHeight = imgHeight
-                    )
+                myBitmap = myBitmapCanvas?.let { convertToGrayscale(image = it) }?.let {
+                    errorDiffusionDithering(image = it)?.let {
+                        resizeImage(
+                            image = it,
+                            newWidth = imgWidth,
+                            newHeight = imgHeight
+                        )
+                    }
                 }
-                if(display == 0){
-                    processHalfImage()
-                }
-                else if(display == 1){
-                    processFullImage()
-                }
+                processFullImage()
             }
             3 -> {
                 if(myBitmap != null){
                     myBitmap!!.recycle()
                     myBitmap = null
                 }
-                myBitmap = uriToBitmap(selectImages.toUri())?.let { errorDiffusionDithering(image = it) }?.let {
-                    resizeImage(
-                        image = it,
-                        newWidth = imgWidth,
-                        newHeight = imgHeight
-                    )
+                myBitmap = myBitmapCanvas?.let {
+                    errorDiffusionDithering(image = it)?.let {
+                        resizeImage(
+                            image = it,
+                            newWidth = imgWidth,
+                            newHeight = imgHeight
+                        )
+                    }
                 }
-                if(display == 0){
-                    processHalfImage()
-                }
-                else if(display == 1){
-                    processFullImage()
-                }
+                processFullImage()
             }
             else -> println("I don't know anything about it")
         }
@@ -214,7 +200,13 @@ class ImageProcessing(context: Context) {
         imageBottom(myBitmap!!)
     }
 
-    fun resizeImage(image: Bitmap, newWidth: Int, newHeight: Int): Bitmap {
+    fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degrees)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    private fun resizeImage(image: Bitmap, newWidth: Int, newHeight: Int): Bitmap {
         var result = Bitmap.createScaledBitmap(image, newWidth, newHeight, false)
 //        Log.i("Bitmap", "EPD = ${bitmapToPixelByteArray().toByteString()}")
         Log.i("Bitmap", "Height 1 = ${result.height}")
@@ -222,7 +214,7 @@ class ImageProcessing(context: Context) {
         return result
     }
 
-    fun imageTop(image: Bitmap){
+    private fun imageTop(image: Bitmap){
         val width = image.width
         val height = image.height
         val halfHeight = height / 2
@@ -236,7 +228,7 @@ class ImageProcessing(context: Context) {
         )
     }
 
-    fun imageBottom(image: Bitmap){
+    private fun imageBottom(image: Bitmap){
         val width = image.width
         val height = image.height
         val halfHeight = height / 2
@@ -252,14 +244,14 @@ class ImageProcessing(context: Context) {
     }
 
     fun SendImage(host: String, port: Int){
-        if(display == 0){
-            sendDataThroughTcpHalf(host, port)
-        }
-        else if(display == 1){
-            sendDataThroughTcp(host, port)
-        }
+        sendding = true
+        sendDataThroughTcp(host, port)
     }
-    fun sendDataThroughTcp(host: String, port: Int) {
+
+    private fun progressSending(addProgress: Float){
+        if (progress < progressDone) progress += addProgress
+    }
+    private fun sendDataThroughTcp(host: String, port: Int) {
 
         myIpAddress = host
         myPort = port
@@ -270,33 +262,63 @@ class ImageProcessing(context: Context) {
                 Log.d("TCP", "Data Black = $dataList")
                 val socket = Socket(myIpAddress, myPort)
                 val outputStream: OutputStream = socket.getOutputStream()
-
-                // Send the data
-                if(!dataList.isNullOrEmpty()){
-                    dataList.forEachIndexed {index, dataByte ->
-                        outputStream.write(dataByte.toByteArray())
-                        Log.d("TCP", "$index Data Black Sent ${dataByte[dataByte.size - 1]}")
-                        delay(300)
-                    }
+                if(display == 0){
+                    outputStream.write(0)
                 }
-                dataList.clear()
-                outputStream.flush()
-                dataList = myListRed
+                else if(display == 1){
+                    outputStream.write(1)
+                }
+                else if(display == 2){
+                    outputStream.write(2)
+                }
 
-                Log.d("TCP", "Data Red = $dataList")
+                var reader1 = BufferedReader(InputStreamReader(socket.getInputStream()))
+                var response1 = reader1.read()
+                if(response1 == 68){
+                    // Send the data
+                    if(!dataList.isNullOrEmpty()){
+                        dataList.forEachIndexed {index, dataByte ->
+                            outputStream.write(dataList[index].toByteArray())
+                            Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
 
-                val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                val response = reader.read()
-//                Log.d("TCP", "Receive Data = $response")
-                if(!dataList.isNullOrEmpty()){
-                    if(response == 82){
-                        Log.d("TCP", "Prepare Send Red Data")
-                        dataList.forEachIndexed {index ,dataByte ->
-                            outputStream.write(dataByte.toByteArray())
-                            Log.d("TCP", "$index Data Red Sent ${dataByte[dataByte.size - 1]}")
-                            delay(300)
+                            var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                            var response = reader.read()
+                            if(response == 65){
+                                outputStream.write(dataList[index].toByteArray())
+                                Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+                            }
+                            progressSending(addProgress = 0.005f)
+                            delay(delaySendTCP)
                         }
                         outputStream.flush()
+                    }
+                    dataList.clear()
+
+                    dataList = myListRed
+
+                    Log.d("TCP", "Data Red = $dataList")
+
+                    val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                    val response = reader.read()
+//                Log.d("TCP", "Receive Data = $response")
+                    if(!dataList.isNullOrEmpty()){
+                        if(response == 82){
+                            Log.d("TCP", "Prepare Send Red Data")
+                            dataList.forEachIndexed {index ,dataByte ->
+                                outputStream.write(dataList[index].toByteArray())
+                                Log.d("TCP", "$index -- 0 Data Red Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+
+                                var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                                var response = reader.read()
+                                if(response == 65){
+                                    outputStream.write(dataList[index].toByteArray())
+                                    Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+                                }
+                                progressSending(addProgress = 0.005f)
+                                delay(delaySendTCP)
+                            }
+                            outputStream.flush()
+                        }
                     }
                 }
                 socket.close()
@@ -309,7 +331,7 @@ class ImageProcessing(context: Context) {
         }
     }
 
-    fun sendDataThroughTcpHalf(host: String, port: Int) {
+    private fun sendDataThroughTcpHalf(host: String, port: Int) {
 
         myIpAddress = host
         myPort = port
@@ -334,9 +356,17 @@ class ImageProcessing(context: Context) {
                     // Send the data
                     if(!dataList.isNullOrEmpty()){
                         dataList.forEachIndexed {index, dataByte ->
-                            outputStream.write(dataByte.toByteArray())
-                            Log.d("TCP", "$index -- 0 Data Black Sent ${dataByte[dataByte.size - 1]}")
-                            delay(300)
+                            outputStream.write(dataList[index].toByteArray())
+                            Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+
+                            var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                            var response = reader.read()
+                            if(response == 65){
+                                outputStream.write(dataList[index].toByteArray())
+                                Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+                            }
+                            progressSending(addProgress = 0.005f)
+                            delay(delaySendTCP)
                         }
                     }
                     dataList.clear()
@@ -352,9 +382,17 @@ class ImageProcessing(context: Context) {
                         if(response == 82){
                             Log.d("TCP", "Prepare Send Red Data")
                             dataList.forEachIndexed {index ,dataByte ->
-                                outputStream.write(dataByte.toByteArray())
-                                Log.d("TCP", "$index -- 0 Data Red Sent ${dataByte[dataByte.size - 1]}")
-                                delay(300)
+                                outputStream.write(dataList[index].toByteArray())
+                                Log.d("TCP", "$index -- 0 Data Red Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+
+                                var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                                var response = reader.read()
+                                if(response == 65){
+                                    outputStream.write(dataList[index].toByteArray())
+                                    Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+                                }
+                                progressSending(addProgress = 0.005f)
+                                delay(delaySendTCP)
                             }
                             outputStream.flush()
                         }
@@ -374,9 +412,17 @@ class ImageProcessing(context: Context) {
                     // Send the data
                     if(!dataList.isNullOrEmpty()){
                         dataList.forEachIndexed {index, dataByte ->
-                            outputStream.write(dataByte.toByteArray())
-                            Log.d("TCP", "$index -- 1 Data Black Sent ${dataByte[dataByte.size - 1]}")
-                            delay(300)
+                            outputStream.write(dataList[index].toByteArray())
+                            Log.d("TCP", "$index -- 1 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+
+                            var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                            var response = reader.read()
+                            if(response == 65){
+                                outputStream.write(dataList[index].toByteArray())
+                                Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+                            }
+                            progressSending(addProgress = 0.005f)
+                            delay(delaySendTCP)
                         }
                     }
                     dataList.clear()
@@ -392,10 +438,18 @@ class ImageProcessing(context: Context) {
                         if(response == 82){
                             Log.d("TCP", "Prepare Send Red Data")
                             dataList.forEachIndexed {index ,dataByte ->
-                                outputStream.write(dataByte.toByteArray())
-                                Log.d("TCP", "$index -- 1 Data Red Sent ${dataByte[dataByte.size - 1]}")
-                                delay(300)
+                                outputStream.write(dataList[index].toByteArray())
+                                Log.d("TCP", "$index -- 1 Data Red Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+
+                                var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                                var response = reader.read()
+                                if(response == 65){
+                                    outputStream.write(dataList[index].toByteArray())
+                                    Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
+                                }
+                                delay(delaySendTCP)
                             }
+                            progressSending(addProgress = 0.005f)
                             outputStream.flush()
                         }
                     }
@@ -408,11 +462,12 @@ class ImageProcessing(context: Context) {
         }
     }
 
-    fun createList(myBytesBlack: ByteArray, myBytesRed: ByteArray){
+    private fun createList(myBytesBlack: ByteArray, myBytesRed: ByteArray){
         val bytesBlack = myBytesBlack
         val bytesRed = myBytesRed
         val bytesSizeBlack = myBytesBlack.size
-        var column = 50
+        var column = 100
+        var columnDiv = 100
         var tempByte = ArrayList<Byte>()
         var count = 0
 
@@ -420,7 +475,7 @@ class ImageProcessing(context: Context) {
             count++
             tempByte.add(bytesBlack[i])
 
-            if(count == (bytesSizeBlack / 50)){
+            if(count == (bytesSizeBlack / columnDiv)){
                 if(column > 1){
                     tempByte.add('6'.toByte())
                     myListBlack.add(tempByte.toByteArray().toByteString())
@@ -436,13 +491,13 @@ class ImageProcessing(context: Context) {
             }
         }
 
-        column = 50
+        column = columnDiv
 
         for(i in bytesRed.indices){
             count++
             tempByte.add(bytesRed[i])
 
-            if(count == (bytesSizeBlack / 50)){
+            if(count == (bytesSizeBlack / columnDiv)){
                 if(column > 1){
                     tempByte.add('8'.toByte())
                     myListRed.add(tempByte.toByteArray().toByteString())
@@ -471,7 +526,7 @@ class ImageProcessing(context: Context) {
 //        }
     }
 
-    fun createListTop(myBytesBlack: ByteArray, myBytesRed: ByteArray){
+    private fun createListTop(myBytesBlack: ByteArray, myBytesRed: ByteArray){
         val bytesBlack = myBytesBlack
         val bytesRed = myBytesRed
         val bytesSizeBlack = myBytesBlack.size
@@ -529,7 +584,7 @@ class ImageProcessing(context: Context) {
 
     }
 
-    fun createListBottom(myBytesBlack: ByteArray, myBytesRed: ByteArray){
+    private fun createListBottom(myBytesBlack: ByteArray, myBytesRed: ByteArray){
         val bytesBlack = myBytesBlack
         val bytesRed = myBytesRed
         val bytesSizeBlack = myBytesBlack.size
@@ -586,7 +641,7 @@ class ImageProcessing(context: Context) {
         }
     }
 
-    fun convertBitmapToEPDBytesRed(image: Bitmap): ByteArray {
+    private fun convertBitmapToEPDBytesRed(image: Bitmap): ByteArray {
         val width = image.width
         val height = image.height
 
@@ -603,10 +658,21 @@ class ImageProcessing(context: Context) {
                 var bitValue = 0
 
                 if ((Color.red(pixel) == 255) and (Color.green(pixel) == 0) and (Color.blue(pixel) == 0)){
-                    bitValue = 1 //Waveshare Red is 0
+                    if(display > 0){
+                        bitValue = 1 //Waveshare Red is 0
+                    }
+                    else{
+                        bitValue = 0 //Waveshare Red is 0
+                    }
+
                 }
                 else{
-                    bitValue = 0
+                    if(display > 0){
+                        bitValue = 0 //Waveshare Red is 0
+                    }
+                    else{
+                        bitValue = 1 //Waveshare Red is 0
+                    }
                 }
                 bytes[y * bytesPerRow + byteIndex] = bytes[y * bytesPerRow + byteIndex] or (bitValue shl bitIndex).toByte()
             }
@@ -617,7 +683,7 @@ class ImageProcessing(context: Context) {
         return bytes
     }
 
-    fun convertBitmapToEPDBytesBlack(image: Bitmap): ByteArray {
+    private fun convertBitmapToEPDBytesBlack(image: Bitmap): ByteArray {
         val width = image.width
         val height = image.height
 
@@ -650,7 +716,7 @@ class ImageProcessing(context: Context) {
 
         return bytes
     }
-    fun convertToBinary(image: Bitmap): Bitmap {
+    private fun convertToBinary(image: Bitmap): Bitmap {
         val result = image.copy(Bitmap.Config.ARGB_8888, true)
         val width = result.width
         val height = result.height
@@ -666,7 +732,7 @@ class ImageProcessing(context: Context) {
         return result
     }
 
-    fun convertToGrayscale(image: Bitmap): Bitmap {
+    private fun convertToGrayscale(image: Bitmap): Bitmap {
         val width = image.width
         val height = image.height
         val grayscaleImage = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -688,7 +754,7 @@ class ImageProcessing(context: Context) {
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
-    fun errorDiffusionDithering(image: Bitmap): Bitmap {
+    private fun errorDiffusionDithering(image: Bitmap): Bitmap {
         val result = image.copy(Bitmap.Config.ARGB_8888, true)
         val width = result.width
         val height = result.height
@@ -768,7 +834,7 @@ class ImageProcessing(context: Context) {
 
     /////////////////////////////////////////////////////////////////////////////////
 
-    fun colorScaleWithoutDithering(image: Bitmap): Bitmap {
+    private fun colorScaleWithoutDithering(image: Bitmap): Bitmap {
         val result = image.copy(Bitmap.Config.ARGB_8888, true)
         val width = result.width
         val height = result.height
