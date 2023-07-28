@@ -71,5 +71,5 @@ dependencies {
     implementation "dev.shreyaspatil:capturable:1.0.3"
 
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
-    implementation  'io.ak1:drawbox:1.0.3'
+//    implementation  'io.ak1:drawbox:1.0.3'
 }

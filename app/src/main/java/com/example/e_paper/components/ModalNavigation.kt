@@ -37,7 +37,8 @@ fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController:
     val scope = rememberCoroutineScope()
     val scopeSelectImage = rememberCoroutineScope()
     // icons to mimic drawer destinations
-    val items = listOf("4.2 Inch WS", "4.2 Inch GD", "13.3 Inch HINK")
+//    val items = listOf("4.2 Inch WS", "4.2 Inch GD", "13.3 Inch HINK")
+    val items = listOf("13.3 Inch HINK")
     val filter = listOf("Binary", "Filter", "Dither Gray", "Dither")
     val selectedItem = remember { mutableStateOf(items[0]) }
     val selectedFilter = remember { mutableStateOf(filter[0]) }

@@ -6,16 +6,18 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.TextMeasurer
-import com.example.e_paper.dataclass.Line
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.example.e_paper.dataclass.TrackLine
 
 class SketchDrawing(context: Context) {
 
@@ -34,7 +36,9 @@ class SketchDrawing(context: Context) {
     var ratioWidth : Float by mutableStateOf(0f)
     var ratioHeight : Float by mutableStateOf(0f)
 
-    var itemCanvasDraw : MutableList<SnapshotStateList<Line>?> = mutableListOf()
+    var undoList = mutableStateListOf<TrackLine>()
+    var redoList = mutableStateListOf<TrackLine>()
+    var historyTrack: SnapshotStateList<TrackLine> = undoList
 
     var savedBitmap : Bitmap? = null
 
@@ -44,6 +48,45 @@ class SketchDrawing(context: Context) {
         this@SketchDrawing.context = context
     }
 
+    fun updateLatestPath(newPoint: Offset) {
+        val index = undoList.lastIndex
+        undoList[index].points.add(newPoint)
+    }
+
+    fun insertNewPath(newPoint: Offset){
+        val pathTrackLine = TrackLine(
+            points = mutableStateListOf(newPoint),
+            strokeColor = color,
+            alpha = opacity,
+            strokeWidth = strokeWidth,
+        )
+        undoList.add(pathTrackLine)
+        redoList.clear()
+    }
+
+    fun Undo(){
+        if(undoList.isNotEmpty()){
+            val last = undoList.last()
+            redoList.add(last)
+            undoList.remove(last)
+        }
+    }
+
+    fun Redo(){
+        if(redoList.isNotEmpty()){
+            val last = redoList.last()
+            undoList.add(last)
+            redoList.remove(last)
+        }
+    }
+
+    var strokeWidth by mutableStateOf(10f)
+
+    var color by mutableStateOf(Color.Black)
+
+    var opacity by mutableStateOf(1f)
+        private set
+
     fun drawCanvas(drawScope: DrawScope) {
         drawScope.apply {
             canvasWidth = size.width
@@ -52,23 +95,43 @@ class SketchDrawing(context: Context) {
             ratioWidth = (canvasWidth / epdWidth)
             ratioHeight = (canvasHeight / epdHeight)
 
-            if(!itemCanvasDraw.isNullOrEmpty()) {
-                itemCanvasDraw.forEachIndexed { index, itemUnit ->
-                    itemUnit?.forEach { line ->
-                        var yOffsetStart = if(line.start.y < 0) 0f else if (line.start.y > canvasHeight) canvasHeight else line.start.y
-                        var yOffsetEnd = if(line.end.y < 0) 0f else if (line.end.y > canvasHeight) canvasHeight else line.end.y
-                        drawLine(
-                            color = line.color,
-                            start = Offset(line.start.x, yOffsetStart),
-                            end = Offset(line.end.x, yOffsetEnd),
-                            strokeWidth = line.strokeWidth.toPx(),
-                            cap = StrokeCap.Round
-                        )
-                    }
-                }
+            historyTrack.forEach { track ->
+                drawPath(
+                    path = createPath(track.points),
+                    color = track.strokeColor,
+                    alpha = track.alpha,
+                    style = Stroke(
+                        width = track.strokeWidth,
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round
+                    )
+                )
             }
         }
     }
+
+    fun createPath(points: List<Offset>) = Path().apply {
+        if (points.size > 1) {
+            var oldPoint: Offset? = null
+            this.moveTo(points[0].x, points[0].y)
+            for (i in 1 until points.size) {
+                val point: Offset = points[i]
+                oldPoint?.let {
+                    val midPoint = calculateMidpoint(it, point)
+                    if (i == 1) {
+                        this.lineTo(midPoint.x, midPoint.y)
+                    } else {
+                        this.quadraticBezierTo(it.x, it.y, midPoint.x, midPoint.y)
+                    }
+                }
+                oldPoint = point
+            }
+            oldPoint?.let { this.lineTo(it.x, oldPoint.y) }
+        }
+    }
+
+    private fun calculateMidpoint(start: Offset, end: Offset) =
+        Offset((start.x + end.x) / 2, (start.y + end.y) / 2)
 
     fun GetScreenDevice(){
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager

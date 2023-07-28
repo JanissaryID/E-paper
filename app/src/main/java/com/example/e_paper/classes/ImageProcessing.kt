@@ -31,7 +31,7 @@ class ImageProcessing(context: Context) {
     var selectImages : String by mutableStateOf("")
     var imageShow : Boolean by mutableStateOf(false)
     var selectProcessing : Int by mutableStateOf(0)
-    private var display : Int by mutableStateOf(0)
+    var display : Int by mutableStateOf(0)
     val context: Context
     var imgHeight = 0
     var imgWidth = 0
@@ -40,6 +40,8 @@ class ImageProcessing(context: Context) {
     var progressDone : Float by mutableStateOf(1f)
     var progress : Float by mutableStateOf(0f)
 
+    var rotateImage90 : Float by mutableStateOf(0f)
+
     var delaySendTCP = 10L
 
     var myIpAddress = ""
@@ -47,7 +49,9 @@ class ImageProcessing(context: Context) {
 
     var myBitmap: Bitmap? = null
 //    var myBitmapCanvas: Bitmap? = null
-    var myBitmapCanvas: Bitmap? = null
+//    var myBitmapCanvas: Bitmap? = null
+
+    var myBitmapCanvas: MutableState<Bitmap?> = mutableStateOf(null)
 
     var myBitmapTop: Bitmap? = null
     var myBitmapBottom: Bitmap? = null
@@ -83,9 +87,9 @@ class ImageProcessing(context: Context) {
         } finally {
             inputStream?.close()
         }
-        myBitmapCanvas = bitmap
+        myBitmapCanvas.value = bitmap
         Log.i("Bitmap", "Bitmap Canvas = ${myBitmapCanvas}")
-        return myBitmapCanvas
+        return myBitmapCanvas.value
     }
 
     fun SizeDisplay(choice: Int = 0){
@@ -93,20 +97,26 @@ class ImageProcessing(context: Context) {
         display = choice
 
         when(choice){
+//            0 -> {
+//                imgHeight = 300
+//                imgWidth = 400
+//            }
+//            1 -> {
+//                imgHeight = 300
+//                imgWidth = 400
+//            }
+//            2 -> {
+//                imgHeight = 680
+//                imgWidth = 960
+//            }
             0 -> {
-                imgHeight = 300
-                imgWidth = 400
-            }
-            1 -> {
-                imgHeight = 300
-                imgWidth = 400
-            }
-            2 -> {
                 imgHeight = 680
                 imgWidth = 960
             }
             else -> println("You can chose another choice")
         }
+
+        Log.i("Sketch", "Device 2 = ${display}")
     }
 
     fun SelectProcessing(){
@@ -118,7 +128,7 @@ class ImageProcessing(context: Context) {
                     myBitmap = null
                 }
                 myBitmap = myBitmapCanvas?.let {
-                    convertToBinary(image = it)?.let {
+                    convertToBinary(image = it.value!!)?.let {
                         resizeImage(
                             image = it,
                             newWidth = imgWidth,
@@ -134,7 +144,7 @@ class ImageProcessing(context: Context) {
                     myBitmap = null
                 }
                 myBitmap = myBitmapCanvas?.let {
-                    colorScaleWithoutDithering(image = it)?.let {
+                    colorScaleWithoutDithering(image = it.value!!)?.let {
                         resizeImage(
                             image = it,
                             newWidth = imgWidth,
@@ -149,7 +159,7 @@ class ImageProcessing(context: Context) {
                     myBitmap!!.recycle()
                     myBitmap = null
                 }
-                myBitmap = myBitmapCanvas?.let { convertToGrayscale(image = it) }?.let {
+                myBitmap = myBitmapCanvas?.let { convertToGrayscale(image = it.value!!) }?.let {
                     errorDiffusionDithering(image = it)?.let {
                         resizeImage(
                             image = it,
@@ -166,7 +176,7 @@ class ImageProcessing(context: Context) {
                     myBitmap = null
                 }
                 myBitmap = myBitmapCanvas?.let {
-                    errorDiffusionDithering(image = it)?.let {
+                    errorDiffusionDithering(image = it.value!!)?.let {
                         resizeImage(
                             image = it,
                             newWidth = imgWidth,
@@ -204,6 +214,13 @@ class ImageProcessing(context: Context) {
         val matrix = Matrix()
         matrix.postRotate(degrees)
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    fun rotateBitmap90(){
+        rotateImage90 += 90f
+        val matrix = Matrix()
+        matrix.postRotate(rotateImage90)
+        myBitmapCanvas.value = Bitmap.createBitmap(myBitmapCanvas.value!!, 0, 0, myBitmapCanvas.value!!.width, myBitmapCanvas.value!!.height, matrix, true)
     }
 
     private fun resizeImage(image: Bitmap, newWidth: Int, newHeight: Int): Bitmap {
@@ -258,12 +275,14 @@ class ImageProcessing(context: Context) {
 
         GlobalScope.launch(Dispatchers.IO) {
             try {
+                Log.i("Sketch", "Device = ${display}")
                 var dataList = myListBlack
                 Log.d("TCP", "Data Black = $dataList")
                 val socket = Socket(myIpAddress, myPort)
                 val outputStream: OutputStream = socket.getOutputStream()
                 if(display == 0){
-                    outputStream.write(0)
+//                    outputStream.write(0)
+                    outputStream.write(2) // Urgent Option
                 }
                 else if(display == 1){
                     outputStream.write(1)

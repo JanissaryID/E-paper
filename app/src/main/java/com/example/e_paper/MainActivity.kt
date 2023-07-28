@@ -13,7 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.e_paper.classes.ImageProcessing
-import com.example.e_paper.classes.SketchImage
+import com.example.e_paper.classes.SketchDrawing
 import com.example.e_paper.classes.Tools
 import com.example.e_paper.navigation.NavGraphSetup
 import com.example.e_paper.ui.theme.EpaperTheme
@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val ImageProcessing = ImageProcessing(context = this)
-        val sketchImage = SketchImage(context = this)
+        val sketchImage = SketchDrawing(context = this)
         val sketchTools = Tools()
 
         setContent {

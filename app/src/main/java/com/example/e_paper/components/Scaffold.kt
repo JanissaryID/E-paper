@@ -1,5 +1,6 @@
 package com.example.e_paper.components
 
+import android.util.Log
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -38,6 +39,14 @@ fun MyScaffold(
                 }, actions = {
                     IconButton(
                         onClick = {
+                            imageProcessing.rotateBitmap90()
+                        }
+                    ) {
+                        Icon(painter = painterResource(id = R.drawable.baseline_rotate_90_degrees_cw_24), contentDescription = "Localized description")
+                    }
+                    IconButton(
+                        onClick = {
+
                             val ipAddress = "192.168.4.1"
                             val port = 80
 
@@ -60,7 +69,7 @@ fun MyScaffold(
                         imageProcessing.progress = 0f
                         imageProcessing.myListBlack.clear()
                         imageProcessing.myListRed.clear()
-                        imageProcessing.SizeDisplay()
+                        imageProcessing.SizeDisplay(imageProcessing.display)
 
                         imageProcessing.SelectProcessing()
                     }

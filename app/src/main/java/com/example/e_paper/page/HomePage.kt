@@ -42,7 +42,7 @@ fun HomePage(imageProcessing: ImageProcessing, paddingValues: PaddingValues) {
         Text(text = "Original Image", color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(8.dp))
         Image(
-            painter = rememberImagePainter(imageProcessing.myBitmapCanvas),
+            painter = rememberImagePainter(imageProcessing.myBitmapCanvas.value),
 //            painter = rememberImagePainter(imageProcessing.selectImages.toUri()),
             contentScale = ContentScale.Fit,
             contentDescription = null,
