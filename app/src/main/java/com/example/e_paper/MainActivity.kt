@@ -14,7 +14,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.e_paper.classes.ImageProcessing
 import com.example.e_paper.classes.SketchDrawing
+import com.example.e_paper.classes.SketchText
+import com.example.e_paper.classes.Timer
 import com.example.e_paper.classes.Tools
+import com.example.e_paper.classes.WifiConnector
 import com.example.e_paper.navigation.NavGraphSetup
 import com.example.e_paper.ui.theme.EpaperTheme
 
@@ -26,10 +29,15 @@ class MainActivity : ComponentActivity() {
 
         val ImageProcessing = ImageProcessing(context = this)
         val sketchImage = SketchDrawing(context = this)
+        val wifiConnector = WifiConnector(this)
+        val timer = Timer()
+        val sketchText = SketchText()
+//        wifiConnector.createInstance(this@MainActivity)
         val sketchTools = Tools()
 
         setContent {
             EpaperTheme {
+                wifiConnector.getMainActivity(this@MainActivity)
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -40,6 +48,9 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         imageProcessing = ImageProcessing,
                         sketchImage = sketchImage,
+                        wifiConnector = wifiConnector,
+                        timer = timer,
+                        sketchText = sketchText,
                         tools = sketchTools
                     )
                 }

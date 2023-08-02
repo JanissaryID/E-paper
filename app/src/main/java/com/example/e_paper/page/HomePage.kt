@@ -22,9 +22,10 @@ import androidx.core.net.toUri
 import coil.compose.rememberImagePainter
 import com.example.e_paper.components.LinearProgressIndicatorSample
 import com.example.e_paper.classes.ImageProcessing
+import com.example.e_paper.classes.Timer
 
 @Composable
-fun HomePage(imageProcessing: ImageProcessing, paddingValues: PaddingValues) {
+fun HomePage(imageProcessing: ImageProcessing, paddingValues: PaddingValues, timer: Timer) {
 
     Column(modifier = Modifier
         .fillMaxSize()
@@ -36,7 +37,7 @@ fun HomePage(imageProcessing: ImageProcessing, paddingValues: PaddingValues) {
         )
         .verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
 
-        LinearProgressIndicatorSample(imageProcessing = imageProcessing)
+        LinearProgressIndicatorSample(imageProcessing = imageProcessing, timer = timer)
 
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = "Original Image", color = MaterialTheme.colorScheme.primary)
@@ -58,7 +59,7 @@ fun HomePage(imageProcessing: ImageProcessing, paddingValues: PaddingValues) {
             Spacer(modifier = Modifier.height(8.dp))
             Image(
                 painter = rememberImagePainter(
-                    imageProcessing.myBitmap
+                    imageProcessing.myBitmap.value
                 ),
                 contentScale = ContentScale.Fit,
                 contentDescription = null,

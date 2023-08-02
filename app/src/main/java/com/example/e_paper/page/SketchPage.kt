@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -30,12 +32,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.e_paper.classes.ImageProcessing
 import com.example.e_paper.classes.SketchDrawing
+import com.example.e_paper.classes.SketchText
 import com.example.e_paper.classes.Tools
 import dev.shreyaspatil.capturable.controller.rememberCaptureController
 
 
 @Composable
-fun SketchPage(imageProcessing: ImageProcessing, sketchImage: SketchDrawing, tools: Tools, navController: NavController) {
+fun SketchPage(imageProcessing: ImageProcessing, sketchImage: SketchDrawing, tools: Tools, navController: NavController, sketchText: SketchText) {
 
     val captureController = rememberCaptureController()
 
@@ -44,6 +47,7 @@ fun SketchPage(imageProcessing: ImageProcessing, sketchImage: SketchDrawing, too
     }
 
     var selectedItem by remember { mutableStateOf(0) }
+    var selectedItem2 by remember { mutableStateOf(-1) }
 
     sketchImage.GetScreenDevice()
 
@@ -63,15 +67,28 @@ fun SketchPage(imageProcessing: ImageProcessing, sketchImage: SketchDrawing, too
                     modifier = Modifier
                         .size(64.dp)
                         .clickable {
+                            if(index == 3){
+                                if(selectedItem2 == index){
+                                    selectedItem2 = -1
+                                    sketchImage.enablePen = false
+                                }
+                                else{
+                                    selectedItem2 = index
+                                    sketchImage.enablePen = true
+                                }
+                            }
                             tools.addItemCanvas2(
                                 sketchImage = sketchImage,
                                 position = index,
                                 captureController = captureController,
-                                navController = navController
+                                sketchText = sketchText
                             )
                         }
                 ) {
-                    Icon(painter = painterResource(id = tools.listIcon2[index]), contentDescription = "Localized description")
+                    Icon(painter = painterResource(id = tools.listIcon2[index]),
+                        contentDescription = "Localized description",
+                        tint = if(selectedItem2 == index) sketchImage.color else LocalContentColor.current
+                    )
                 }
             }
         }
@@ -79,7 +96,7 @@ fun SketchPage(imageProcessing: ImageProcessing, sketchImage: SketchDrawing, too
             .fillMaxWidth()
             .height(610.dp)
             .background(Color.White)) {
-            CanvasPage(sketchImage = sketchImage, imageProcessing = imageProcessing, captureController = captureController)
+            CanvasPage(sketchImage = sketchImage, imageProcessing = imageProcessing, captureController = captureController, sketchText = sketchText)
 
         }
         LazyRow(
@@ -99,7 +116,7 @@ fun SketchPage(imageProcessing: ImageProcessing, sketchImage: SketchDrawing, too
                             sketchImage.color = sketchImage.listColor[selectedItem]
                         }
                 ) {
-                    Surface(modifier = Modifier.size(46.dp), shape = CircleShape, color = color, border = BorderStroke(5.dp, if(selectedItem == index) Color.Green else Color.Transparent)) {
+                    Surface(modifier = Modifier.size(46.dp), shape = CircleShape, color = color, border = BorderStroke(5.dp, if(selectedItem == index) MaterialTheme.colorScheme.primary else Color.Transparent)) {
 
                     }
                 }

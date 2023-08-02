@@ -33,8 +33,8 @@ class ImageProcessing(context: Context) {
     var selectProcessing : Int by mutableStateOf(0)
     var display : Int by mutableStateOf(0)
     val context: Context
-    var imgHeight = 0
-    var imgWidth = 0
+    var imgHeight = 680
+    var imgWidth = 960
 
     var sendding : Boolean by mutableStateOf(false)
     var progressDone : Float by mutableStateOf(1f)
@@ -47,28 +47,18 @@ class ImageProcessing(context: Context) {
     var myIpAddress = ""
     var myPort = 0
 
-    var myBitmap: Bitmap? = null
-//    var myBitmapCanvas: Bitmap? = null
-//    var myBitmapCanvas: Bitmap? = null
+    var myBitmap: MutableState<Bitmap?> = mutableStateOf(null)
 
     var myBitmapCanvas: MutableState<Bitmap?> = mutableStateOf(null)
 
-    var myBitmapTop: Bitmap? = null
-    var myBitmapBottom: Bitmap? = null
-
-    var myListBlackTop : MutableList<ByteString> = mutableListOf()
-    var myListRedTop : MutableList<ByteString> = mutableListOf()
-    var myListBlackBottom : MutableList<ByteString> = mutableListOf()
-    var myListRedBottom : MutableList<ByteString> = mutableListOf()
-
     var allDataArrayReady : Boolean by mutableStateOf(false)
-    var allDataArrayReadyTop : Boolean by mutableStateOf(false)
-    var allDataArrayReadyBottom : Boolean by mutableStateOf(false)
 
     var myListBlack : MutableList<ByteString> = mutableListOf()
     var myListRed : MutableList<ByteString> = mutableListOf()
 
     var colorSection : Boolean by mutableStateOf(false)
+
+    val timer: Timer? = null
 
     init {
         this@ImageProcessing.context = context
@@ -92,42 +82,15 @@ class ImageProcessing(context: Context) {
         return myBitmapCanvas.value
     }
 
-    fun SizeDisplay(choice: Int = 0){
-
-        display = choice
-
-        when(choice){
-//            0 -> {
-//                imgHeight = 300
-//                imgWidth = 400
-//            }
-//            1 -> {
-//                imgHeight = 300
-//                imgWidth = 400
-//            }
-//            2 -> {
-//                imgHeight = 680
-//                imgWidth = 960
-//            }
-            0 -> {
-                imgHeight = 680
-                imgWidth = 960
-            }
-            else -> println("You can chose another choice")
-        }
-
-        Log.i("Sketch", "Device 2 = ${display}")
-    }
-
     fun SelectProcessing(){
         Log.i("Bitmap", "Select processing = ${selectProcessing}")
         when(selectProcessing) {
             0 -> {
-                if(myBitmap != null){
-                    myBitmap!!.recycle()
-                    myBitmap = null
+                if(myBitmap.value != null){
+                    myBitmap.value!!.recycle()
+                    myBitmap.value = null
                 }
-                myBitmap = myBitmapCanvas?.let {
+                myBitmap.value = myBitmapCanvas?.let {
                     convertToBinary(image = it.value!!)?.let {
                         resizeImage(
                             image = it,
@@ -139,11 +102,11 @@ class ImageProcessing(context: Context) {
                 processFullImage()
             }
             1 -> {
-                if(myBitmap != null){
-                    myBitmap!!.recycle()
-                    myBitmap = null
+                if(myBitmap.value != null){
+                    myBitmap.value!!.recycle()
+                    myBitmap.value = null
                 }
-                myBitmap = myBitmapCanvas?.let {
+                myBitmap.value = myBitmapCanvas?.let {
                     colorScaleWithoutDithering(image = it.value!!)?.let {
                         resizeImage(
                             image = it,
@@ -155,11 +118,11 @@ class ImageProcessing(context: Context) {
                 processFullImage()
             }
             2 -> {
-                if(myBitmap != null){
-                    myBitmap!!.recycle()
-                    myBitmap = null
+                if(myBitmap.value != null){
+                    myBitmap.value!!.recycle()
+                    myBitmap.value = null
                 }
-                myBitmap = myBitmapCanvas?.let { convertToGrayscale(image = it.value!!) }?.let {
+                myBitmap.value = myBitmapCanvas?.let { convertToGrayscale(image = it.value!!) }?.let {
                     errorDiffusionDithering(image = it)?.let {
                         resizeImage(
                             image = it,
@@ -171,11 +134,11 @@ class ImageProcessing(context: Context) {
                 processFullImage()
             }
             3 -> {
-                if(myBitmap != null){
-                    myBitmap!!.recycle()
-                    myBitmap = null
+                if(myBitmap.value != null){
+                    myBitmap.value!!.recycle()
+                    myBitmap.value = null
                 }
-                myBitmap = myBitmapCanvas?.let {
+                myBitmap.value = myBitmapCanvas?.let {
                     errorDiffusionDithering(image = it.value!!)?.let {
                         resizeImage(
                             image = it,
@@ -196,18 +159,9 @@ class ImageProcessing(context: Context) {
         myListBlack.clear()
         myListRed.clear()
         createList(
-            myBytesBlack = convertBitmapToEPDBytesBlack(myBitmap!!),
-            myBytesRed = convertBitmapToEPDBytesRed(myBitmap!!)
+            myBytesBlack = convertBitmapToEPDBytesBlack(myBitmap.value!!),
+            myBytesRed = convertBitmapToEPDBytesRed(myBitmap.value!!)
         )
-    }
-
-    private fun processHalfImage(){
-        myListBlackTop.clear()
-        myListBlackBottom.clear()
-        myListRedTop.clear()
-        myListRedBottom.clear()
-        imageTop(myBitmap!!)
-        imageBottom(myBitmap!!)
     }
 
     fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
@@ -225,71 +179,34 @@ class ImageProcessing(context: Context) {
 
     private fun resizeImage(image: Bitmap, newWidth: Int, newHeight: Int): Bitmap {
         var result = Bitmap.createScaledBitmap(image, newWidth, newHeight, false)
-//        Log.i("Bitmap", "EPD = ${bitmapToPixelByteArray().toByteString()}")
         Log.i("Bitmap", "Height 1 = ${result.height}")
         Log.i("Bitmap", "Width 1 = ${result.width}")
         return result
     }
 
-    private fun imageTop(image: Bitmap){
-        val width = image.width
-        val height = image.height
-        val halfHeight = height / 2
-
-        val topBitmap = Bitmap.createBitmap(image, 0, 0, width, halfHeight)
-        myBitmapTop = topBitmap
-
-        createListTop(
-            myBytesBlack = convertBitmapToEPDBytesBlack(topBitmap!!),
-            myBytesRed = convertBitmapToEPDBytesRed(topBitmap!!)
-        )
-    }
-
-    private fun imageBottom(image: Bitmap){
-        val width = image.width
-        val height = image.height
-        val halfHeight = height / 2
-
-        val bottomBitmap = Bitmap.createBitmap(image, 0, halfHeight, width, halfHeight)
-        myBitmapBottom = bottomBitmap
-
-        createListBottom(
-            myBytesBlack = convertBitmapToEPDBytesBlack(bottomBitmap!!),
-            myBytesRed = convertBitmapToEPDBytesRed(bottomBitmap!!)
-        )
-//        Log.d("TCP", "Bottom ----------------- = ${convertBitmapToEPDBytesBlack(bottomBitmap!!)}")
-    }
-
-    fun SendImage(host: String, port: Int){
+    fun SendImage(host: String, port: Int, timer: Timer){
         sendding = true
-        sendDataThroughTcp(host, port)
+        sendDataThroughTcp(host, port, timer)
     }
 
     private fun progressSending(addProgress: Float){
         if (progress < progressDone) progress += addProgress
     }
-    private fun sendDataThroughTcp(host: String, port: Int) {
+    private fun sendDataThroughTcp(host: String, port: Int, timer: Timer) {
 
         myIpAddress = host
         myPort = port
 
         GlobalScope.launch(Dispatchers.IO) {
             try {
+                timer.start()
                 Log.i("Sketch", "Device = ${display}")
                 var dataList = myListBlack
                 Log.d("TCP", "Data Black = $dataList")
                 val socket = Socket(myIpAddress, myPort)
                 val outputStream: OutputStream = socket.getOutputStream()
-                if(display == 0){
-//                    outputStream.write(0)
-                    outputStream.write(2) // Urgent Option
-                }
-                else if(display == 1){
-                    outputStream.write(1)
-                }
-                else if(display == 2){
-                    outputStream.write(2)
-                }
+
+                outputStream.write(2)
 
                 var reader1 = BufferedReader(InputStreamReader(socket.getInputStream()))
                 var response1 = reader1.read()
@@ -306,7 +223,7 @@ class ImageProcessing(context: Context) {
                                 outputStream.write(dataList[index].toByteArray())
                                 Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
                             }
-                            progressSending(addProgress = 0.005f)
+                            progressSending(addProgress = 0.0045f)
                             delay(delaySendTCP)
                         }
                         outputStream.flush()
@@ -333,147 +250,24 @@ class ImageProcessing(context: Context) {
                                     outputStream.write(dataList[index].toByteArray())
                                     Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
                                 }
-                                progressSending(addProgress = 0.005f)
+                                progressSending(addProgress = 0.0045f)
                                 delay(delaySendTCP)
                             }
                             outputStream.flush()
                         }
+                    }
+
+                    val reader2 = BufferedReader(InputStreamReader(socket.getInputStream()))
+                    val response2 = reader2.read()
+                    Log.d("TCP", "Receive Data = $response2")
+                    if(response2 == 68){
+                        timer.stop()
+                        progressSending(addProgress = 0.1f)
                     }
                 }
                 socket.close()
 
                 Log.d("TCP", "Data sent successfully")
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("TCP", "Failed to send data: ${e.message}")
-            }
-        }
-    }
-
-    private fun sendDataThroughTcpHalf(host: String, port: Int) {
-
-        myIpAddress = host
-        myPort = port
-
-        GlobalScope.launch(Dispatchers.IO) {
-            try {
-//                var halfScreen = false
-                var section: Int by mutableStateOf(0)
-                val socket = Socket(myIpAddress, myPort)
-                val outputStream: OutputStream = socket.getOutputStream()
-
-                outputStream.write('S'.toInt())
-                outputStream.flush()
-
-                var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                var response = reader.read()
-                Log.d("TCP", "Response = $response")
-
-                if(response == 78){
-                    var dataList = myListBlackTop
-                    Log.d("TCP", "Data Black = $dataList")
-                    // Send the data
-                    if(!dataList.isNullOrEmpty()){
-                        dataList.forEachIndexed {index, dataByte ->
-                            outputStream.write(dataList[index].toByteArray())
-                            Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
-
-                            var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                            var response = reader.read()
-                            if(response == 65){
-                                outputStream.write(dataList[index].toByteArray())
-                                Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
-                            }
-                            progressSending(addProgress = 0.005f)
-                            delay(delaySendTCP)
-                        }
-                    }
-                    dataList.clear()
-                    outputStream.flush()
-                    dataList = myListRedTop
-
-                    Log.d("TCP", "Data Red = $dataList")
-
-                    val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                    val response = reader.read()
-//                Log.d("TCP", "Receive Data = $response")
-                    if(!dataList.isNullOrEmpty()){
-                        if(response == 82){
-                            Log.d("TCP", "Prepare Send Red Data")
-                            dataList.forEachIndexed {index ,dataByte ->
-                                outputStream.write(dataList[index].toByteArray())
-                                Log.d("TCP", "$index -- 0 Data Red Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
-
-                                var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                                var response = reader.read()
-                                if(response == 65){
-                                    outputStream.write(dataList[index].toByteArray())
-                                    Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
-                                }
-                                progressSending(addProgress = 0.005f)
-                                delay(delaySendTCP)
-                            }
-                            outputStream.flush()
-                        }
-                    }
-                    Log.d("TCP", "Data sent successfully")
-                }
-                outputStream.write('S'.toInt())
-                outputStream.flush()
-
-                reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                response = reader.read()
-                Log.d("TCP", "Response = $response")
-
-                if(response == 78){
-                    var dataList = myListBlackBottom
-                    Log.d("TCP", "Data Black = $dataList")
-                    // Send the data
-                    if(!dataList.isNullOrEmpty()){
-                        dataList.forEachIndexed {index, dataByte ->
-                            outputStream.write(dataList[index].toByteArray())
-                            Log.d("TCP", "$index -- 1 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
-
-                            var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                            var response = reader.read()
-                            if(response == 65){
-                                outputStream.write(dataList[index].toByteArray())
-                                Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
-                            }
-                            progressSending(addProgress = 0.005f)
-                            delay(delaySendTCP)
-                        }
-                    }
-                    dataList.clear()
-                    outputStream.flush()
-                    dataList = myListRedBottom
-
-                    Log.d("TCP", "Data Red = $dataList")
-
-                    val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                    val response = reader.read()
-//                Log.d("TCP", "Receive Data = $response")
-                    if(!dataList.isNullOrEmpty()){
-                        if(response == 82){
-                            Log.d("TCP", "Prepare Send Red Data")
-                            dataList.forEachIndexed {index ,dataByte ->
-                                outputStream.write(dataList[index].toByteArray())
-                                Log.d("TCP", "$index -- 1 Data Red Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
-
-                                var reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                                var response = reader.read()
-                                if(response == 65){
-                                    outputStream.write(dataList[index].toByteArray())
-                                    Log.d("TCP", "$index -- 0 Data Black Sent ${dataList[index][dataList[index].size - 1]} -- $progress")
-                                }
-                                delay(delaySendTCP)
-                            }
-                            progressSending(addProgress = 0.005f)
-                            outputStream.flush()
-                        }
-                    }
-                    Log.d("TCP", "Data sent successfully")
-                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 Log.e("TCP", "Failed to send data: ${e.message}")
@@ -535,129 +329,6 @@ class ImageProcessing(context: Context) {
             allDataArrayReady = true
             Log.d("TCP", "Create All List Done")
         }
-
-//        myListBlack.forEachIndexed { index, byteString ->
-//            Log.d("TCP", "Column = $index - ${byteString} -- ${byteString[byteString.size - 1]}")
-//        }
-
-//        myListRed.forEachIndexed { index, byteString ->
-//            Log.d("TCP", "Column = $index - ${byteString} -- ${byteString[byteString.size - 1]}")
-//        }
-    }
-
-    private fun createListTop(myBytesBlack: ByteArray, myBytesRed: ByteArray){
-        val bytesBlack = myBytesBlack
-        val bytesRed = myBytesRed
-        val bytesSizeBlack = myBytesBlack.size
-        var column = 50
-        var tempByte = ArrayList<Byte>()
-        var count = 0
-
-        Log.d("TCP", "Data Top Black ${myBytesBlack.toByteString()}")
-
-        for(i in bytesBlack.indices){
-            count++
-            tempByte.add(bytesBlack[i])
-
-            if(count == (bytesSizeBlack / 50)){
-                if(column > 1){
-                    tempByte.add('6'.toByte())
-                    myListBlackTop.add(tempByte.toByteArray().toByteString())
-                    tempByte.clear()
-                    column--
-                }
-                else{
-                    tempByte.add('7'.toByte())
-                    myListBlackTop.add(tempByte.toByteArray().toByteString())
-                    tempByte.clear()
-                }
-                count = 0
-            }
-        }
-
-        column = 50
-
-        for(i in bytesRed.indices){
-            count++
-            tempByte.add(bytesRed[i])
-
-            if(count == (bytesSizeBlack / 50)){
-                if(column > 1){
-                    tempByte.add('8'.toByte())
-                    myListRedTop.add(tempByte.toByteArray().toByteString())
-                    tempByte.clear()
-                    column--
-                }
-                else{
-                    tempByte.add('9'.toByte())
-                    myListRedTop.add(tempByte.toByteArray().toByteString())
-                    tempByte.clear()
-                }
-                count = 0
-            }
-        }
-        if(myListBlackTop.isNotEmpty() && myListRedTop.isNotEmpty()){
-            allDataArrayReadyTop = true
-            Log.d("TCP", "Create All List Done Top")
-        }
-
-    }
-
-    private fun createListBottom(myBytesBlack: ByteArray, myBytesRed: ByteArray){
-        val bytesBlack = myBytesBlack
-        val bytesRed = myBytesRed
-        val bytesSizeBlack = myBytesBlack.size
-        var column = 50
-        var tempByte = ArrayList<Byte>()
-        var count = 0
-
-        Log.d("TCP", "Data Bottom Black ${myBytesBlack.toByteString()}")
-
-        for(i in bytesBlack.indices){
-            count++
-            tempByte.add(bytesBlack[i])
-
-            if(count == (bytesSizeBlack / 50)){
-                if(column > 1){
-                    tempByte.add('6'.toByte())
-                    myListBlackBottom.add(tempByte.toByteArray().toByteString())
-                    tempByte.clear()
-                    column--
-                }
-                else{
-                    tempByte.add('7'.toByte())
-                    myListBlackBottom.add(tempByte.toByteArray().toByteString())
-                    tempByte.clear()
-                }
-                count = 0
-            }
-        }
-
-        column = 50
-
-        for(i in bytesRed.indices){
-            count++
-            tempByte.add(bytesRed[i])
-
-            if(count == (bytesSizeBlack / 50)){
-                if(column > 1){
-                    tempByte.add('8'.toByte())
-                    myListRedBottom.add(tempByte.toByteArray().toByteString())
-                    tempByte.clear()
-                    column--
-                }
-                else{
-                    tempByte.add('9'.toByte())
-                    myListRedBottom.add(tempByte.toByteArray().toByteString())
-                    tempByte.clear()
-                }
-                count = 0
-            }
-        }
-        if(myListBlackBottom.isNotEmpty() && myListRedBottom.isNotEmpty()){
-            allDataArrayReadyBottom = true
-            Log.d("TCP", "Create All List Done")
-        }
     }
 
     private fun convertBitmapToEPDBytesRed(image: Bitmap): ByteArray {
@@ -677,21 +348,11 @@ class ImageProcessing(context: Context) {
                 var bitValue = 0
 
                 if ((Color.red(pixel) == 255) and (Color.green(pixel) == 0) and (Color.blue(pixel) == 0)){
-                    if(display > 0){
-                        bitValue = 1 //Waveshare Red is 0
-                    }
-                    else{
-                        bitValue = 0 //Waveshare Red is 0
-                    }
+                    bitValue = 1
 
                 }
                 else{
-                    if(display > 0){
-                        bitValue = 0 //Waveshare Red is 0
-                    }
-                    else{
-                        bitValue = 1 //Waveshare Red is 0
-                    }
+                    bitValue = 0
                 }
                 bytes[y * bytesPerRow + byteIndex] = bytes[y * bytesPerRow + byteIndex] or (bitValue shl bitIndex).toByte()
             }

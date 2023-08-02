@@ -1,6 +1,7 @@
 package com.example.e_paper.components
 
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Spacer
@@ -22,17 +23,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.example.e_paper.R
 import com.example.e_paper.classes.ImageProcessing
+import com.example.e_paper.classes.Timer
+import com.example.e_paper.classes.WifiConnector
 import com.example.e_paper.navigation.Screens
 import kotlinx.coroutines.launch
 
 @Composable
-fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController: NavController) {
+fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController: NavController, wifiConnector: WifiConnector, timer: Timer) {
+    val context = LocalContext.current
+
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val scopeSelectImage = rememberCoroutineScope()
@@ -71,12 +77,13 @@ fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController:
                         label = { Text(item) },
                         selected = item == selectedItem.value,
                         onClick = {
-                            imageProcessing.SizeDisplay(choice = index)
+//                            imageProcessing.SizeDisplay(choice = index)
                             selectedItem.value = item
 
                             imageProcessing.imageShow = false
                             imageProcessing.myListBlack.clear()
                             imageProcessing.myListRed.clear()
+                            timer.currentTimeInSecond = 0L
                             imageProcessing.allDataArrayReady = false
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -129,7 +136,7 @@ fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController:
             }
         },
         content = {
-            MyScaffold(imageProcessing = imageProcessing){
+            MyScaffold(imageProcessing = imageProcessing, wifiConnector = wifiConnector, timer = timer){
                 scope.launch { if(it) drawerState.open() else drawerState.close() }
             }
 //            SimpleBottomSheetScaffoldSample()

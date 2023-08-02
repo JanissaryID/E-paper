@@ -2,6 +2,7 @@ package com.example.e_paper.classes
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Paint
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
@@ -17,6 +18,14 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.example.e_paper.dataclass.ItemText
 import com.example.e_paper.dataclass.TrackLine
 
 class SketchDrawing(context: Context) {
@@ -36,11 +45,11 @@ class SketchDrawing(context: Context) {
     var ratioWidth : Float by mutableStateOf(0f)
     var ratioHeight : Float by mutableStateOf(0f)
 
+    var enablePen : Boolean by mutableStateOf(false)
+
     var undoList = mutableStateListOf<TrackLine>()
     var redoList = mutableStateListOf<TrackLine>()
     var historyTrack: SnapshotStateList<TrackLine> = undoList
-
-    var savedBitmap : Bitmap? = null
 
     val listColor: List<Color> = listOf(Color.Black, Color.Red, Color.White)
 
@@ -107,6 +116,20 @@ class SketchDrawing(context: Context) {
                     )
                 )
             }
+
+//            val myText = textMeasurer.measure(style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, background = Color.Cyan), text = "000000")
+//            rotate(90f){
+//                val paint = Paint()
+//                paint.textAlign = Paint.Align.CENTER
+//                paint.textSize = 64f
+//                paint.color = 0xffb0b3ff.toInt()
+//
+//                drawText(
+//                    textLayoutResult = myText,
+//                    color = Color.Black,
+//                    topLeft = Offset((itemUnit.xPos*ratioWidth), (itemUnit.yPos*ratioHeight)),
+//                )
+//            }
         }
     }
 
