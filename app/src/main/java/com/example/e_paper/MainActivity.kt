@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.e_paper.classes.ImageProcessing
 import com.example.e_paper.classes.SketchDrawing
 import com.example.e_paper.classes.SketchText
+import com.example.e_paper.classes.Themes
 import com.example.e_paper.classes.Timer
 import com.example.e_paper.classes.Tools
 import com.example.e_paper.classes.WifiConnector
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
         val wifiConnector = WifiConnector(this)
         val timer = Timer()
         val sketchText = SketchText()
+        val themes = Themes()
 //        wifiConnector.createInstance(this@MainActivity)
         val sketchTools = Tools()
 
@@ -51,7 +53,8 @@ class MainActivity : ComponentActivity() {
                         wifiConnector = wifiConnector,
                         timer = timer,
                         sketchText = sketchText,
-                        tools = sketchTools
+                        tools = sketchTools,
+                        themes = themes
                     )
                 }
             }

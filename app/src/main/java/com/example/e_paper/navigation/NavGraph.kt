@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.example.e_paper.classes.ImageProcessing
 import com.example.e_paper.classes.SketchDrawing
 import com.example.e_paper.classes.SketchText
+import com.example.e_paper.classes.Themes
 import com.example.e_paper.classes.Timer
 import com.example.e_paper.classes.Tools
 import com.example.e_paper.classes.WifiConnector
@@ -21,14 +22,15 @@ fun NavGraphSetup(
     wifiConnector: WifiConnector,
     sketchText: SketchText,
     timer: Timer,
-    tools: Tools
+    tools: Tools,
+    themes: Themes
 ) {
     NavHost(navController = navController, startDestination = Screens.Home.route){
 
         composable(
             route = Screens.Home.route,
         ){
-            HomeScreen(imageProcessing = imageProcessing, navController = navController, wifiConnector = wifiConnector, timer = timer)
+            HomeScreen(imageProcessing = imageProcessing, navController = navController, wifiConnector = wifiConnector, timer = timer, themes = themes)
         }
 
         composable(

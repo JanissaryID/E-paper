@@ -30,13 +30,14 @@ import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.example.e_paper.R
 import com.example.e_paper.classes.ImageProcessing
+import com.example.e_paper.classes.Themes
 import com.example.e_paper.classes.Timer
 import com.example.e_paper.classes.WifiConnector
 import com.example.e_paper.navigation.Screens
 import kotlinx.coroutines.launch
 
 @Composable
-fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController: NavController, wifiConnector: WifiConnector, timer: Timer) {
+fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController: NavController, wifiConnector: WifiConnector, timer: Timer, themes: Themes) {
     val context = LocalContext.current
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -47,7 +48,7 @@ fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController:
     val items = listOf("13.3 Inch HINK")
     val filter = listOf("Binary", "Filter", "Dither Gray", "Dither")
     val selectedItem = remember { mutableStateOf(items[0]) }
-    val selectedFilter = remember { mutableStateOf(filter[0]) }
+//    val selectedFilter = remember { mutableStateOf(filter[0]) }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
         try {
@@ -90,23 +91,25 @@ fun ModalNavigationDrawerSample(imageProcessing: ImageProcessing, navController:
                     )
                 }
                 Spacer(Modifier.height(16.dp))
-                Text(text = "Filter", fontSize = MaterialTheme.typography.titleLarge.fontSize)
+                Text(text = "Templates", fontSize = MaterialTheme.typography.titleLarge.fontSize)
                 Spacer(Modifier.height(4.dp))
-                filter.forEachIndexed { index, filter ->
+                themes.listThemes.forEachIndexed { index, item ->
                     NavigationDrawerItem(
                         icon = {
                             Icon(painter = painterResource(id = R.drawable.twotone_photo_filter_24),
                                 contentDescription = "Ratio")
                         },
-                        label = { Text(filter) },
-                        selected = filter == selectedFilter.value,
+                        label = { Text(item) },
+                        selected = item == themes.selectedFilter,
                         onClick = {
-                            imageProcessing.selectProcessing = index
-                            imageProcessing.imageShow = false
-                            imageProcessing.myListBlack.clear()
-                            imageProcessing.myListRed.clear()
-                            imageProcessing.allDataArrayReady = false
-                            selectedFilter.value = filter
+                            themes.themesIndex = index
+                            themes.selectedFilter = themes.listThemes[themes.themesIndex]
+//                            imageProcessing.selectProcessing = index
+//                            imageProcessing.imageShow = false
+//                            imageProcessing.myListBlack.clear()
+//                            imageProcessing.myListRed.clear()
+//                            imageProcessing.allDataArrayReady = false
+//                            selectedFilter.value = filter
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
